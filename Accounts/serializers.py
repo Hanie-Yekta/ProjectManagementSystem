@@ -54,7 +54,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 class UserLogoutSerializer(serializers.Serializer):
     """
-    serialize data for logging out a user.
+    serializes data for logging out a user.
     includes validation for refresh token.
     """
 
@@ -72,3 +72,17 @@ class UserLogoutSerializer(serializers.Serializer):
             raise serializers.ValidationError({'Error': "Invalid token or token already blacklisted"})
 
         return attrs
+
+
+
+class UserProfileDetailSerializer(serializers.ModelSerializer):
+    """
+    serializes data for viewing and updating user information.
+    phone number and email cannot be changed by user.
+    """
+
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'first_name', 'last_name', 'phone_number', 'email', 'gender', 'image')
+        extra_kwargs = {'phone_number': {'read_only': True},
+                        'email': {'read_only': True}}
