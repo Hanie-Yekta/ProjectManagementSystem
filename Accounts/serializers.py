@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import CustomUser
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 def clean_email(value):
@@ -10,7 +11,7 @@ def clean_email(value):
     """
 
     if CustomUser.objects.filter(email=value).exists():
-        raise serializers.ValidationError('Email already exists. try another one!')
+        raise serializers.ValidationError({'Error': 'Email already exists. try another one!'})
 
 
 def clean_phone_number(value):
@@ -22,7 +23,7 @@ def clean_phone_number(value):
         raise serializers.ValidationError('Phone number must be 11 digits')
 
     if CustomUser.objects.filter(phone_number=value).exists():
-        raise serializers.ValidationError('Phone number already exists. try another one!')
+        raise serializers.ValidationError({'Error': 'Phone number already exists. try another one!'})
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -47,3 +48,27 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         password = validated_data.get('password')
         validated_data['password'] = make_password(password)
         return super().create(validated_data)
+
+
+
+
+class UserLogoutSerializer(serializers.Serializer):
+    """
+    serialize data for logging out a user.
+    includes validation for refresh token.
+    """
+
+    refresh = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        """
+        override this method to validates and blacklists the refresh token.
+        """
+
+        try:
+            token = RefreshToken(attrs.get('refresh'))
+            token.blacklist()
+        except Exception as e:
+            raise serializers.ValidationError({'Error': "Invalid token or token already blacklisted"})
+
+        return attrs
