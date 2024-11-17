@@ -103,8 +103,8 @@ class UserPasswordResetConfirmSerializer(serializers.Serializer):
     includes validation for password and confirm password.
     """
 
-    new_password = serializers.CharField(required=True, write_only=True, validators=[validate_password])
-    confirm_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
+    confirm_password = serializers.CharField(required=True)
 
     def validate(self, attrs):
         """
@@ -121,6 +121,37 @@ class UserPasswordResetConfirmSerializer(serializers.Serializer):
         """
         override this method to update password for the user instance.
         """
+        user.set_password(self.validated_data.get('new_password'))
+        user.save()
+        return user
+
+
+
+class UserChangePasswordSerializer(serializers.Serializer):
+    """
+    serializes data for changing password operation.
+    includes validation for password and confirm password.
+    """
+
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        """
+        override this method to validates that two password fields match
+        and if the passwords don't, raise an error.
+        """
+
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({'Error': 'Passwords do not match'})
+        return attrs
+
+    def save(self, user, **kwargs):
+        """
+        override this method to update password for the user instance.
+        """
+
         user.set_password(self.validated_data.get('new_password'))
         user.save()
         return user

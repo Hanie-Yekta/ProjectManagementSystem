@@ -123,7 +123,6 @@ class UserPasswordResetView(generics.GenericAPIView):
         return Response(data={'detail': 'Password reset link has been sent'}, status=status.HTTP_200_OK)
 
 
-
 class UserPasswordResetConfirmView(generics.GenericAPIView):
     """
     This view handles the confirmation step for user password reset.
@@ -149,3 +148,33 @@ class UserPasswordResetConfirmView(generics.GenericAPIView):
             return Response({"detail": 'Password have been reset with new password'})
         else:
             return Response({"detail": 'Password have been reset'})
+
+
+class UserChangePasswordView(APIView):
+    """
+    This view handles the confirmation step for user password reset.
+    permission ->  Only authenticated users
+    """
+
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.UserChangePasswordSerializer
+
+    def post(self, request, *args, **kwargs):
+        """
+        this method gets the data token and pass it to the serializer and
+        if the data is valid, check that old input password is match with user password
+        then update the password in database.
+        """
+
+        serializer = self.serializer_class(data=request.data)
+
+        if serializer.is_valid(raise_exception=True):
+            old_password = request.data.get('old_password')
+            user = CustomUser.objects.get(email=request.user.email)
+            if user.check_password(old_password):
+                serializer.save(user)
+                return Response(data={'detail': 'user password updated!'}, status=status.HTTP_200_OK)
+
+            return Response(data={'detail': 'Old password is incorrect'}, status=status.HTTP_400_BAD_REQUEST)
+
+
