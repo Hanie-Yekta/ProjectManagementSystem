@@ -86,3 +86,41 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
         fields = ('id', 'first_name', 'last_name', 'phone_number', 'email', 'gender', 'image')
         extra_kwargs = {'phone_number': {'read_only': True},
                         'email': {'read_only': True}}
+
+
+class UserPasswordResetSerializer(serializers.Serializer):
+    """
+    serializes data for password reset request.
+    """
+
+    email = serializers.EmailField(required=True)
+
+
+
+class UserPasswordResetConfirmSerializer(serializers.Serializer):
+    """
+    serializes data for confirming password reset operation.
+    includes validation for password and confirm password.
+    """
+
+    new_password = serializers.CharField(required=True, write_only=True, validators=[validate_password])
+    confirm_password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        """
+        override this method to validates that two password fields match
+        and if the passwords don't, raise an error.
+        """
+
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({'Error': 'Passwords do not match'})
+        return attrs
+
+
+    def save(self, user, **kwargs):
+        """
+        override this method to update password for the user instance.
+        """
+        user.set_password(self.validated_data.get('new_password'))
+        user.save()
+        return user

@@ -138,3 +138,12 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
 }
+
+#smtp
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'yekta.hnie@gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_PASSWORD = 'jlqb lwec wepe vhpq'
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'Project Management System <yekta.hnie@gmail.com>'
