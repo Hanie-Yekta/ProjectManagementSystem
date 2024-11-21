@@ -12,8 +12,8 @@ class ProjectAdmin(admin.ModelAdmin):
     filter by -> status
     """
 
-    list_display = ('title', 'CEO', 'image_thumbnail', 'status', 'budget')
-    search_fields = ('title', 'CEO', 'category')
+    list_display = ('title', 'ceo', 'image_thumbnail', 'status', 'budget')
+    search_fields = ('title', 'ceo', 'category')
     list_filter = ('status',)
 
 admin.site.register(Project, ProjectAdmin)

@@ -1,5 +1,7 @@
 from django.db import models
 from Accounts.models import CustomUser
+from django.core.exceptions import ValidationError
+
 
 class Project(models.Model):
     """
@@ -22,8 +24,8 @@ class Project(models.Model):
         ('yellow', 'Other'),
     )
     title = models.CharField(max_length=100)
-    CEO = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='project_ceo')
-    Expert = models.ManyToManyField(CustomUser, related_name='project_experts')
+    ceo = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='project_ceo')
+    experts = models.ManyToManyField(CustomUser, related_name='project_experts')
     description = models.TextField()
     image = models.ImageField(upload_to='projects/project/', default='projects/default/project_d.png')
     category = models.CharField(choices=CATEGORY_OPTIONS, max_length=6)
@@ -35,3 +37,13 @@ class Project(models.Model):
 
     def __str__(self):
         return self.title
+
+
+    def clean(self):
+        """
+        override this method to ensure that start date must before end date.
+        """
+
+        super().clean()
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValidationError("start date cannot be greater than end date.")
