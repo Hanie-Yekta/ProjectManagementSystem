@@ -2,6 +2,11 @@ from django.db import models
 from Accounts.models import CustomUser
 
 class Project(models.Model):
+    """
+    project model stores user projects information.
+    user can enter -> title, experts, description, category, budget, start and end date of project
+    """
+
     STATUS_OPTIONS = (
         ('not_started', 'Not Started'),
         ('in_progress', 'In Progress'),

@@ -5,6 +5,13 @@ import admin_thumbnails
 
 @admin_thumbnails.thumbnail('image')
 class ProjectAdmin(admin.ModelAdmin):
+    """
+    manage project instances in admin panel.
+    Provides additional display, filtering, and searching options
+    search by -> title, CEO, category
+    filter by -> status
+    """
+
     list_display = ('title', 'CEO', 'image_thumbnail', 'status', 'budget')
     search_fields = ('title', 'CEO', 'category')
     list_filter = ('status',)
