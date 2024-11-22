@@ -81,3 +81,22 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+
+    def clean(self):
+        """
+        override this method to ensure that -> start date must be before end date.
+                                               task's start date must be before project's start date.
+                                               task's end date must be before project's end date.
+        """
+
+        super().clean()
+        if self.start_date and self.end_date:
+            if self.start_date > self.end_date:
+                raise ValidationError("start date cannot be greater than end date.")
+
+            if self.start_date < self.project.start_date:
+                raise ValidationError("Task's start date must be after Project's start date.")
+
+            if self.end_date > self.project.end_date:
+                raise ValidationError("Task's end date must be before Project's end date.")
