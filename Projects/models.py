@@ -1,6 +1,7 @@
 from django.db import models
 from Accounts.models import CustomUser
 from django.core.exceptions import ValidationError
+from django.utils.timezone import now
 
 
 class Project(models.Model):
@@ -33,6 +34,8 @@ class Project(models.Model):
     end_date = models.DateField(null=True, blank=True)
     status = models.CharField(choices=STATUS_OPTIONS, max_length=11, default='not_started')
     budget = models.PositiveBigIntegerField(null=True, blank=True)
+    is_overdue = models.BooleanField(default=False)
+    completion_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -45,6 +48,53 @@ class Project(models.Model):
         super().clean()
         if self.start_date and self.end_date and self.start_date > self.end_date:
             raise ValidationError("start date cannot be greater than end date.")
+
+    @property
+    def change_overdue(self):
+        """
+        check if the end date has value and status is not completed ->
+                if the end date is overdue ->
+                        overdue field = True
+        else -> overdue field = False
+        """
+        if self.end_date and self.status != 'completed':
+            if self.end_date < now().date():
+                return True
+        return False
+
+    @property
+    def change_status(self):
+        """
+        check if the start date has value and status is not started ->
+                if the start date is overdue ->
+                        status = 'in_progress'
+        else -> don't change status value
+        """
+        if self.start_date and self.status == 'not_started':
+            if self.start_date < now().date():
+                return 'in_progress'
+        return self.status
+
+
+    def complete_project(self):
+        """
+        complete project with change two fields -> status=completed
+                                                   completion_date = the date of the day that method called
+        """
+        self.status = 'completed'
+        self.completion_date = now().date()
+        self.save()
+
+
+    def save(self, *args, **kwargs):
+        """
+        Override this method to update overdue and status value.
+        """
+        self.is_overdue = self.change_overdue
+        self.status = self.change_status
+
+        super().save(*args, **kwargs)
+
 
 
 class Task(models.Model):
@@ -68,7 +118,7 @@ class Task(models.Model):
         ('yellow', 'Other'),
     )
     title = models.CharField(max_length=100)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='task_project')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='task')
     manager = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='task_manager')
     experts = models.ManyToManyField(CustomUser, related_name='task_experts')
     description = models.TextField()
@@ -78,6 +128,9 @@ class Task(models.Model):
     end_date = models.DateField(null=True, blank=True)
     status = models.CharField(choices=STATUS_OPTIONS, max_length=11, default='not_started')
     budget = models.PositiveBigIntegerField(null=True, blank=True)
+
+    is_overdue = models.BooleanField(default=False)
+    completion_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -100,6 +153,54 @@ class Task(models.Model):
 
             if self.end_date > self.project.end_date:
                 raise ValidationError("Task's end date must be before Project's end date.")
+
+
+    @property
+    def change_overdue(self):
+        """
+        check if the end date has value and status is not completed ->
+                if the end date is overdue ->
+                        overdue field = True
+        else -> overdue field = False
+        """
+        if self.end_date and self.status != 'completed':
+            if self.end_date < now().date():
+                return True
+        return False
+
+
+    @property
+    def change_status(self):
+        """
+        check if the start date has value and status is not started ->
+                if the start date is overdue ->
+                        status = 'in_progress'
+        else -> don't change status value
+        """
+        if self.start_date and self.status == 'not_started':
+            if self.start_date < now().date():
+                return 'in_progress'
+        return self.status
+
+
+    def complete_task(self):
+        """
+        complete task with change two fields -> status=completed
+                                                completion_date = the date of the day that method called
+        """
+        self.status = 'completed'
+        self.completion_date = now().date()
+        self.save()
+
+
+    def save(self, *args, **kwargs):
+        """
+        Override this method to update overdue and status value.
+        """
+        self.is_overdue = self.change_overdue
+        self.status = self.change_status
+
+        super().save(*args, **kwargs)
 
 
 class SubTask(models.Model):
@@ -133,6 +234,8 @@ class SubTask(models.Model):
     end_date = models.DateField(null=True, blank=True)
     status = models.CharField(choices=STATUS_OPTIONS, max_length=11, default='not_started')
     budget = models.PositiveBigIntegerField(null=True, blank=True)
+    is_overdue = models.BooleanField(default=False)
+    completion_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -155,3 +258,55 @@ class SubTask(models.Model):
 
             if self.end_date > self.task.end_date:
                 raise ValidationError("Subtask's end date must be before Task's end date.")
+
+
+    @property
+    def change_overdue(self):
+        """
+        check if the end date has value and status is not completed ->
+                if the end date is overdue ->
+                        overdue field = True
+        else -> overdue field = False
+        """
+        if self.end_date and self.status != 'completed':
+            if self.end_date < now().date():
+                return True
+        return False
+
+
+    @property
+    def change_status(self):
+        """
+        check if the start date has value and status is not started ->
+                if the start date is overdue ->
+                        status = 'in_progress'
+        else -> don't change status value
+        """
+        if self.start_date and self.status == 'not_started':
+            if self.start_date < now().date():
+                return 'in_progress'
+        return self.status
+
+
+    def complete_subtask(self):
+        """
+        complete subtask with change two fields -> status=completed
+                                                   completion_date = the date of the day that method called
+        """
+        self.status = 'completed'
+        self.completion_date = now().date()
+        self.save()
+
+
+    def save(self, *args, **kwargs):
+        """
+        Override this method to update overdue and status value.
+        """
+        self.is_overdue = self.change_overdue
+        self.status = self.change_status
+
+        super().save(*args, **kwargs)
+
+
+
+

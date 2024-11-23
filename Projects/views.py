@@ -1,4 +1,7 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
 from .models import Project, Task, SubTask
 from . import serializers
 
@@ -180,3 +183,53 @@ class SubTaskUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
         delete the subtask
         """
         instance.delete()
+
+
+class CompleteProjectStatusView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(Project, id=kwargs['pk'])
+        tasks = project.task.all()
+
+        incomplete_tasks = []
+        for task in tasks:
+            if task.status != 'completed':
+                incomplete_tasks.append(task.title)
+
+        if incomplete_tasks:
+            return Response({'Error': f"These tasks aren't completed: {incomplete_tasks}"})
+        else:
+            project.complete_project()
+            return Response(data={'detail': 'Project completed successfully'}, status=status.HTTP_200_OK)
+
+class CompleteTaskStatusView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        task = get_object_or_404(Task, id=kwargs['pk'])
+        sub_tasks = task.sub_task.all()
+
+        incomplete_subtasks = []
+        for subtask in sub_tasks:
+            if subtask.status != 'completed':
+                incomplete_subtasks.append(subtask.title)
+
+        if incomplete_subtasks:
+            return Response({'Error': f"These subtasks aren't completed: {incomplete_subtasks}"})
+        else:
+            task.complete_task()
+            return Response(data={'detail': 'Task completed successfully'}, status=status.HTTP_200_OK)
+
+
+
+class CompleteSubTaskStatusView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        subtask = get_object_or_404(SubTask, id=kwargs['pk'])
+        subtask.complete_subtask()
+        return Response(data={'detail': 'Subtask completed successfully'}, status=status.HTTP_200_OK)
+
+
+
