@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from Accounts.models import CustomUser
-from .models import Project, Task
+from .models import Project, Task, SubTask
 from Accounts.serializers import UserProfileDetailSerializer
 
 
@@ -128,6 +128,7 @@ class TaskSerializer(serializers.ModelSerializer):
         manager = attrs.get('manager')
 
         if self.instance:
+            project = self.instance.project
             if start_date and self.instance.start_date:
                 raise serializers.ValidationError({'start_date': "You can't change start date field!"})
 
@@ -201,7 +202,7 @@ class TaskSerializer(serializers.ModelSerializer):
             exist_experts.append(p_expert.email)
 
         new_experts = []
-        if update_experts and exist_experts:
+        if update_experts:
             for expert in update_experts:
                 if expert in exist_experts:
                     raise serializers.ValidationError({'Error': f'User with email {expert} is already exits.'})
@@ -216,4 +217,127 @@ class TaskSerializer(serializers.ModelSerializer):
             instance.experts.add(*new_experts)
 
         return super().update(instance, validated_data)
+
+
+
+class SubTaskSerializer(serializers.ModelSerializer):
+    """
+    serialize data for subtask model.
+    include validation on start date and end date and manager fields.
+    """
+    experts = serializers.ListField(child=serializers.EmailField(), write_only=True, required=False)
+    experts_details = UserProfileDetailSerializer(source='experts', many=True, read_only=True)
+    task = TaskSerializer(read_only=True)
+    manager = serializers.EmailField(write_only=True, required=True)
+    manager_details = UserProfileDetailSerializer(source='manager', read_only=True)
+
+    class Meta:
+        model = SubTask
+        fields = ('pk', 'title', 'task', 'manager', 'manager_details', 'experts', 'experts_details', 'description',
+                  'image', 'category', 'start_date', 'end_date', 'status', 'budget')
+        extra_kwargs = {'description': {'required': False}, }
+
+
+    def validate(self, attrs):
+        """
+        override this method to validate start date and end date -> start date must before end date
+                                                                    subtask's start date must be before task's start date.
+                                                                    subtask's end date must be before task's end date.
+        Once the date value is set, these fields cannot be changed.
+        and validate manager field -> can not be changed
+        """
+
+        start_date = attrs.get('start_date')
+        end_date = attrs.get('end_date')
+        manager = attrs.get('manager')
+
+        if self.instance:
+            task = self.instance.task
+            if start_date and self.instance.start_date:
+                raise serializers.ValidationError({'start_date': "You can't change start date field!"})
+
+            if end_date and self.instance.end_date:
+                raise serializers.ValidationError({'end_date': "You can't change end date field!"})
+
+            if manager:
+                raise serializers.ValidationError({'manager': "You can't change manager field!"})
+        else:
+            task = self.context['task']
+
+        if start_date and end_date:
+            if start_date > end_date:
+                raise serializers.ValidationError({'Error': "start date cannot be greater than end date."})
+
+            if start_date < task.start_date:
+                raise serializers.ValidationError(f"Task's start date must be after {task.start_date}")
+
+            if end_date > task.end_date:
+                raise serializers.ValidationError(f"Task's end date must be before {task.end_date}")
+
+        return attrs
+
+    def create(self, validated_data):
+        """
+        override this method to handle expert users and link them to the subtask record
+        the expert email that has been sent must exist in CustomUser model
+        also manager email must exist in CustomUser model
+        and if it has been sent create a record in task model.
+        """
+
+        experts_email = validated_data.pop('experts', [])
+        manager_email = validated_data.pop('manager')
+        exist_experts = []
+
+        if experts_email:
+            for expert in experts_email:
+                user = CustomUser.objects.filter(email=expert).first()
+                if user:
+                    exist_experts.append(user)
+                else:
+                    raise serializers.ValidationError({'Error': f'User with email {expert} not found.'})
+
+        manager = CustomUser.objects.filter(email=manager_email).first()
+
+        if manager:
+            subtask = SubTask.objects.create(manager=manager, **validated_data)
+
+            if exist_experts:
+                subtask.experts.set(exist_experts)
+                subtask.save()
+            return subtask
+        else:
+            raise serializers.ValidationError({'Error': f'Manager with email {manager_email} not found.'})
+
+
+    def update(self, instance, validated_data):
+        """
+        override this method to handle update subtask operation
+        handle new experts that user entered
+        new expert must exist in CustomUser model and not be duplicated in subtask record
+        """
+
+        update_experts = validated_data.pop('experts', [])
+
+        exist_experts = []
+        for p_expert in instance.experts.all():
+            exist_experts.append(p_expert.email)
+
+
+        new_experts = []
+        if update_experts:
+            for expert in update_experts:
+                if expert in exist_experts:
+                    raise serializers.ValidationError({'Error': f'User with email {expert} is already exits.'})
+                else:
+                    user = CustomUser.objects.filter(email=expert).first()
+                    if user:
+                        new_experts.append(user)
+                    else:
+                        raise serializers.ValidationError({'Error': f'User with email {expert} not found.'})
+
+        if new_experts:
+            instance.experts.add(*new_experts)
+
+        return super().update(instance, validated_data)
+
 

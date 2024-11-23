@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions
-from .models import Project, Task
+from .models import Project, Task, SubTask
 from . import serializers
 
 class ProjectListCreateView(generics.ListCreateAPIView):
@@ -59,7 +59,7 @@ class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
 class TaskListCreateView(generics.ListCreateAPIView):
     """
-    his view is used to listing and creating tasks.
+    this view is used to listing and creating tasks.
     methods -> GET: for show the list of tasks of specific project
                POST: for create a new task for specific project
     permission ->  Only authenticated users
@@ -120,3 +120,63 @@ class TaskUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
 
 
+class SubTaskListCreateView(generics.ListCreateAPIView):
+    """
+    this view is used to listing and creating subtasks.
+    methods -> GET: for show the list of subtasks of specific task
+               POST: for create a new subtask for specific task
+    permission ->  Only authenticated users
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.SubTaskSerializer
+    lookup_field = 'task_id'
+
+    def get_queryset(self):
+        """
+        return user's subtasks
+        """
+        return SubTask.objects.filter(task=self.kwargs['task_id'])
+
+    def get_serializer_context(self):
+        """
+        sent additional data (task data) to serializer with context to validate fields properly.
+        """
+        context = super().get_serializer_context()
+        context['task'] = Task.objects.get(id=self.kwargs['task_id'])
+        return context
+
+    def perform_create(self, serializer):
+        """
+        pass the task to serializer
+        save subtask's information
+        """
+        serializer.is_valid(raise_exception=True)
+        task = Task.objects.get(id=self.kwargs['task_id'])
+        serializer.save(task=task)
+
+
+
+class SubTaskUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    this view is used to update and delete a subtask
+    methods -> PUT, PATCH: for update the information of the subtask
+               DELETE: for delete the subtask
+    permission ->  Only authenticated users
+    """
+
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.SubTaskSerializer
+    queryset = SubTask
+
+    def perform_update(self, serializer):
+        """
+        validate and update the subtask data
+        """
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """
+        delete the subtask
+        """
+        instance.delete()

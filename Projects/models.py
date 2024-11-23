@@ -136,3 +136,22 @@ class SubTask(models.Model):
 
     def __str__(self):
         return self.title
+
+
+    def clean(self):
+        """
+        override this method to ensure that -> start date must be before end date.
+                                               subtask's start date must be before task's start date.
+                                               subtask's end date must be before task's end date.
+        """
+
+        super().clean()
+        if self.start_date and self.end_date:
+            if self.start_date > self.end_date:
+                raise ValidationError("start date cannot be greater than end date.")
+
+            if self.start_date < self.task.start_date:
+                raise ValidationError("Subtask's start date must be after Task's start date.")
+
+            if self.end_date > self.task.end_date:
+                raise ValidationError("Subtask's end date must be before Task's end date.")
