@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, Task
+from .models import Project, Task, SubTask
 import admin_thumbnails
 
 
@@ -30,7 +30,23 @@ class TaskAdmin(admin.ModelAdmin):
     """
 
     list_display = ('title', 'manager', 'project__ceo', 'project__title', 'image_thumbnail', 'status', 'budget')
-    search_fields = ('title', 'manager', 'category')
+    search_fields = ('title', 'manager', 'category', 'project__title')
     list_filter = ('status',)
 
 admin.site.register(Task, TaskAdmin)
+
+
+@admin_thumbnails.thumbnail('image')
+class SubTaskAdmin(admin.ModelAdmin):
+    """
+    manage subtask instances in admin panel.
+    Provides additional display, filtering, and searching options
+    search by -> title, manager, category
+    filter by -> status
+    """
+
+    list_display = ('title', 'manager', 'task__project__ceo', 'task__title', 'task__project__title', 'image_thumbnail', 'status', 'budget')
+    search_fields = ('title', 'manager', 'category', 'task__title')
+    list_filter = ('status',)
+
+admin.site.register(SubTask, SubTaskAdmin)
