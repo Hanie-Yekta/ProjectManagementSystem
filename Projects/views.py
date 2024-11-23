@@ -186,9 +186,16 @@ class SubTaskUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CompleteProjectStatusView(APIView):
+    """
+    this view is used to change the status of projects
+    """
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
+        """
+        this method retrieves all project's tasks and if they are 'completed', the project status = completed
+                                                      else show tasks title with a message
+        """
         project = get_object_or_404(Project, id=kwargs['pk'])
         tasks = project.task.all()
 
@@ -203,10 +210,18 @@ class CompleteProjectStatusView(APIView):
             project.complete_project()
             return Response(data={'detail': 'Project completed successfully'}, status=status.HTTP_200_OK)
 
+
 class CompleteTaskStatusView(APIView):
+    """
+    this view is used to change the status of tasks
+    """
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
+        """
+        this method retrieves all task's subtasks and if they are 'completed', the task status = completed
+                                                      else show subtasks title with a message
+        """
         task = get_object_or_404(Task, id=kwargs['pk'])
         sub_tasks = task.sub_task.all()
 
@@ -224,9 +239,15 @@ class CompleteTaskStatusView(APIView):
 
 
 class CompleteSubTaskStatusView(APIView):
+    """
+    this view is used to change the status of subtasks.
+    """
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
+        """
+        this method retrieves subtask and change its status to completed.
+        """
         subtask = get_object_or_404(SubTask, id=kwargs['pk'])
         subtask.complete_subtask()
         return Response(data={'detail': 'Subtask completed successfully'}, status=status.HTTP_200_OK)
