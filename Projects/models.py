@@ -138,21 +138,26 @@ class Task(models.Model):
 
     def clean(self):
         """
-        override this method to ensure that -> start date must be before end date.
+        override this method to ensure that -> the parent project must have dates value.
+                                               start date must be before end date.
                                                task's start date must be before project's start date.
                                                task's end date must be before project's end date.
         """
 
         super().clean()
-        if self.start_date and self.end_date:
-            if self.start_date > self.end_date:
-                raise ValidationError("start date cannot be greater than end date.")
+        if self.project.start_date and self.project.end_date:
+            if self.start_date and self.end_date:
+                if self.start_date > self.end_date:
+                    raise ValidationError("start date cannot be greater than end date.")
 
-            if self.start_date < self.project.start_date:
-                raise ValidationError("Task's start date must be after Project's start date.")
+                if self.start_date < self.project.start_date:
+                    raise ValidationError("Task's start date must be after Project's start date.")
 
-            if self.end_date > self.project.end_date:
-                raise ValidationError("Task's end date must be before Project's end date.")
+                if self.end_date > self.project.end_date:
+                    raise ValidationError("Task's end date must be before Project's end date.")
+        else:
+            raise ValidationError("You Cannot set task's start date or end date "
+                                  "because the parent project's dates aren't set.")
 
 
     @property
@@ -243,21 +248,26 @@ class SubTask(models.Model):
 
     def clean(self):
         """
-        override this method to ensure that -> start date must be before end date.
+        override this method to ensure that -> the parent task must have dates value
+                                                start date must be before end date.
                                                subtask's start date must be before task's start date.
                                                subtask's end date must be before task's end date.
         """
 
         super().clean()
-        if self.start_date and self.end_date:
-            if self.start_date > self.end_date:
-                raise ValidationError("start date cannot be greater than end date.")
+        if self.task.start_date and self.task.end_date:
+            if self.start_date and self.end_date:
+                if self.start_date > self.end_date:
+                    raise ValidationError("start date cannot be greater than end date.")
 
-            if self.start_date < self.task.start_date:
-                raise ValidationError("Subtask's start date must be after Task's start date.")
+                if self.start_date < self.task.start_date:
+                    raise ValidationError("Subtask's start date must be after Task's start date.")
 
-            if self.end_date > self.task.end_date:
-                raise ValidationError("Subtask's end date must be before Task's end date.")
+                if self.end_date > self.task.end_date:
+                    raise ValidationError("Subtask's end date must be before Task's end date.")
+        else:
+            raise ValidationError("You Cannot set subtask's start date or end date "
+                                  "because the parent task's dates aren't set.")
 
 
     @property
