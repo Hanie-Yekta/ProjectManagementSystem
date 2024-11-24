@@ -116,7 +116,8 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """
-        override this method to validate start date and end date -> start date must before end date
+        override this method to validate start date and end date -> the parent project must have dates value.
+                                                                    start date must before end date
                                                                     task's start date must be before project's start date.
                                                                     task's end date must be before project's end date.
         Once the date value is set, these fields cannot be changed.
@@ -129,28 +130,35 @@ class TaskSerializer(serializers.ModelSerializer):
 
         if self.instance:
             project = self.instance.project
-            if start_date and self.instance.start_date:
-                raise serializers.ValidationError({'start_date': "You can't change start date field!"})
+            if project.start_date and project.end_date:
+                if start_date and self.instance.start_date:
+                    raise serializers.ValidationError({'start_date': "You can't change start date field!"})
 
-            if end_date and self.instance.end_date:
-                raise serializers.ValidationError({'end_date': "You can't change end date field!"})
+                if end_date and self.instance.end_date:
+                    raise serializers.ValidationError({'end_date': "You can't change end date field!"})
+            else:
+                raise serializers.ValidationError({'Error': "You Cannot set task's start date or end date "
+                                                            "because the parent project's dates aren't set."})
 
             if manager:
                 raise serializers.ValidationError({'manager': "You can't change manager field!"})
         else:
             project = self.context['project']
 
+        if project.start_date and project.end_date:
+            if start_date and end_date:
+                if start_date > end_date:
+                    raise serializers.ValidationError({'Error': "start date cannot be greater than end date."})
 
-        if start_date and end_date:
-            if start_date > end_date:
-                raise serializers.ValidationError({'Error': "start date cannot be greater than end date."})
+                if start_date < project.start_date:
 
-            if start_date < project.start_date:
+                    raise serializers.ValidationError(f"Task's start date must be after {project.start_date}")
 
-                raise serializers.ValidationError(f"Task's start date must be after {project.start_date}")
-
-            if end_date > project.end_date:
-                raise serializers.ValidationError(f"Task's end date must be before {project.end_date}")
+                if end_date > project.end_date:
+                    raise serializers.ValidationError(f"Task's end date must be before {project.end_date}")
+        else:
+            raise serializers.ValidationError({'Error': "You Cannot set task's start date or end date "
+                                                        "because the parent project's dates aren't set."})
 
         return attrs
 
@@ -240,7 +248,8 @@ class SubTaskSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """
-        override this method to validate start date and end date -> start date must before end date
+        override this method to validate start date and end date -> the parent task must have dates value.
+                                                                    start date must before end date
                                                                     subtask's start date must be before task's start date.
                                                                     subtask's end date must be before task's end date.
         Once the date value is set, these fields cannot be changed.
@@ -253,26 +262,35 @@ class SubTaskSerializer(serializers.ModelSerializer):
 
         if self.instance:
             task = self.instance.task
-            if start_date and self.instance.start_date:
-                raise serializers.ValidationError({'start_date': "You can't change start date field!"})
+            if task.start_date and task.end_date:
+                if start_date and self.instance.start_date:
+                    raise serializers.ValidationError({'start_date': "You can't change start date field!"})
 
-            if end_date and self.instance.end_date:
-                raise serializers.ValidationError({'end_date': "You can't change end date field!"})
+                if end_date and self.instance.end_date:
+                    raise serializers.ValidationError({'end_date': "You can't change end date field!"})
+            else:
+                raise serializers.ValidationError({'Error':"You Cannot set subtask's start date or end date "
+                                                           "because the parent task's dates aren't set."})
 
             if manager:
                 raise serializers.ValidationError({'manager': "You can't change manager field!"})
         else:
             task = self.context['task']
 
-        if start_date and end_date:
-            if start_date > end_date:
-                raise serializers.ValidationError({'Error': "start date cannot be greater than end date."})
 
-            if start_date < task.start_date:
-                raise serializers.ValidationError(f"Task's start date must be after {task.start_date}")
+        if task.start_date and task.end_date:
+            if start_date and end_date:
+                if start_date > end_date:
+                    raise serializers.ValidationError({'Error': "start date cannot be greater than end date."})
 
-            if end_date > task.end_date:
-                raise serializers.ValidationError(f"Task's end date must be before {task.end_date}")
+                if start_date < task.start_date:
+                    raise serializers.ValidationError(f"Task's start date must be after {task.start_date}")
+
+                if end_date > task.end_date:
+                    raise serializers.ValidationError(f"Task's end date must be before {task.end_date}")
+        else:
+            raise serializers.ValidationError({'Error': "You Cannot set subtask's start date or end date "
+                                                        "because the parent task's dates aren't set."})
 
         return attrs
 
