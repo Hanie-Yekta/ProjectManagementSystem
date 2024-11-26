@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'Accounts',
     'Projects',
+    'Financials',
 ]
 
 AUTH_USER_MODEL = 'Accounts.CustomUser'

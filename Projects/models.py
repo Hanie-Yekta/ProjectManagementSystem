@@ -2,6 +2,9 @@ from django.db import models
 from Accounts.models import CustomUser
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
+from django.contrib.contenttypes.fields import GenericRelation
+from Financials.models import FinancialOutcomeRecord
+from django.contrib.contenttypes.models import ContentType
 
 
 class Project(models.Model):
@@ -36,6 +39,7 @@ class Project(models.Model):
     budget = models.PositiveBigIntegerField(null=True, blank=True)
     is_overdue = models.BooleanField(default=False)
     completion_date = models.DateField(null=True, blank=True)
+    financial_object_type = GenericRelation(FinancialOutcomeRecord, related_name='project')
 
     def __str__(self):
         return self.title
@@ -96,6 +100,15 @@ class Project(models.Model):
         super().save(*args, **kwargs)
 
 
+    @property
+    def content_id(self):
+        """
+        return the contentType id for the project model instance.
+        """
+        c = ContentType.objects.get_for_model(self)
+        return c.id
+
+
 
 class Task(models.Model):
     """
@@ -128,9 +141,9 @@ class Task(models.Model):
     end_date = models.DateField(null=True, blank=True)
     status = models.CharField(choices=STATUS_OPTIONS, max_length=11, default='not_started')
     budget = models.PositiveBigIntegerField(null=True, blank=True)
-
     is_overdue = models.BooleanField(default=False)
     completion_date = models.DateField(null=True, blank=True)
+    financial_object_type = GenericRelation(FinancialOutcomeRecord, related_name='task')
 
     def __str__(self):
         return self.title
@@ -208,6 +221,15 @@ class Task(models.Model):
         super().save(*args, **kwargs)
 
 
+    @property
+    def content_id(self):
+        """
+        return the contentType id for the task model instance.
+        """
+        c = ContentType.objects.get_for_model(self)
+        return c.id
+
+
 class SubTask(models.Model):
     """
     subtask model stores user subtask information.
@@ -241,6 +263,7 @@ class SubTask(models.Model):
     budget = models.PositiveBigIntegerField(null=True, blank=True)
     is_overdue = models.BooleanField(default=False)
     completion_date = models.DateField(null=True, blank=True)
+    financial_object_type = GenericRelation(FinancialOutcomeRecord, related_name='subtask')
 
     def __str__(self):
         return self.title
@@ -316,6 +339,15 @@ class SubTask(models.Model):
         self.status = self.change_status
 
         super().save(*args, **kwargs)
+
+
+    @property
+    def content_id(self):
+        """
+        return the contentType id for the subtask model instance.
+        """
+        c = ContentType.objects.get_for_model(self)
+        return c.id
 
 
 
