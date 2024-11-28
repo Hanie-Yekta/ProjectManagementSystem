@@ -48,3 +48,22 @@ All notable changes to this project are documented here.
 - Added CRUD operations for the `Task` model. ([#10](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/10))
 - Added the `Subtask` model. ([#11](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/11))
 - Added CRUD operations for the `Subtask` model. ([#12](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/12))
+
+<br>
+
+## [1.7.0] - 1403-09-04
+### Added
+- Completed the change for the `status` field in the `Projects` app models. ([#14](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/14))
+- Added condition for initialize date fields. ([#15](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/15))
+
+<br>
+
+## [1.9.0] - 1403-09-07
+### Added
+- Created the `Financials` app with the `FinancialOutcomeRecord` model and models for payment methods. ([#17](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/17))
+
+<br>
+
+## [1.10.0] - 1403-09-09
+### Added
+- Added CRUD operations for the models created in the `Financials` app. ([#18](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/18))
