@@ -2,6 +2,7 @@ from django.db import models
 from Accounts.models import CustomUser
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.utils.timezone import now
 
 
 class FinancialOutcomeRecord(models.Model):
@@ -58,6 +59,22 @@ class CashPaymentRecord(models.Model):
     def __str__(self):
         return self.financial_outcome.title
 
+    def complete_cash_payment(self):
+        """
+        complete cash payment with change two fields -> status=done
+                                                   payment_date = the date of the day that method called
+        """
+        self.status = 'done'
+        self.payment_date = now().date()
+        self.save()
+
+    def cancel_cash_payment(self):
+        """
+        cancel cash payment with change the status field -> status=canceled
+        """
+        self.status = 'canceled'
+        self.save()
+
 
 class CheckPaymentRecord(models.Model):
     """
@@ -79,6 +96,45 @@ class CheckPaymentRecord(models.Model):
 
     def __str__(self):
         return self.financial_outcome.title
+
+    @property
+    def cancel_check_payment(self):
+        """
+        check if the check date and check number has values and status is none ->
+                if the check date is in the past -> status = 'canceled'
+        else -> don't change the status value
+        """
+        if self.check_date and self.check_number and self.status is None:
+            if self.check_date < now().date():
+                return 'canceled'
+        return self.status
+
+
+    def complete_check_payment(self):
+        """
+        complete check payment base on check date  and check number fields ->
+                    if both fields have values and if the check date is equal to today's date -> status=done
+                                                                                        return string with value = true
+                                                    else return string with value = false2
+                    else return string with value = false1
+        """
+        if self.check_date and self.check_number:
+            if self.check_date == now().date():
+                self.status = 'done'
+                self.save()
+                return 'True'
+            return 'False2'
+        return 'False1'
+
+
+    def save(self, *args, **kwargs):
+        """
+        Override this method to update status value.
+        """
+        self.status = self.cancel_check_payment
+        super().save(*args, **kwargs)
+
+
 
 
 class InstallmentPaymentRecord(models.Model):
@@ -122,3 +178,44 @@ class InstallmentSchedule(models.Model):
 
     def __str__(self):
         return self.installment_id.financial_outcome.title
+
+
+    def complete_installment_schedule(self):
+        """
+        complete installment schedule base on date field ->
+                    if date field has value and if its value is today or in future -> status=paid
+                                                                                   return string with value = true
+                                                else return string with value = false2
+                    else return string with value = false1
+        """
+        if self.date:
+            if self.date >= now().date():
+                self.installment_status = 'paid'
+                self.save()
+                return 'True'
+            return 'False2'
+        return 'False1'
+
+
+    @property
+    def cancel_installment_schedule_payment(self):
+        """
+        check if the date has value and status is in progress ->
+                if the date is in past -> status = 'canceled'
+        else -> don't change status value
+        """
+        if self.date and self.installment_status == 'in_progress':
+            if self.date < now().date():
+                return 'canceled'
+        return self.installment_status
+
+
+    def save(self, *args, **kwargs):
+        """
+        Override this method to update status value.
+        """
+        self.installment_status = self.cancel_installment_schedule_payment
+        super().save(*args, **kwargs)
+
+
+
