@@ -1,4 +1,7 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
 
 from .models import FinancialOutcomeRecord, CashPaymentRecord, CheckPaymentRecord, InstallmentPaymentRecord, \
     InstallmentSchedule
@@ -14,7 +17,6 @@ class FinancialOutcomeListCreateView(generics.ListCreateAPIView):
     """
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = serializers.FinancialOutcomeSerializer
-
 
     def get_queryset(self):
         """
@@ -40,7 +42,6 @@ class FinancialOutcomeListCreateView(generics.ListCreateAPIView):
         """
         serializer.is_valid(raise_exception=True)
         serializer.save(created_by=self.request.user)
-
 
 
 class FinancialOutcomeUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
@@ -89,7 +90,6 @@ class PaymentMethodUpdateView(generics.RetrieveUpdateAPIView):
         elif financial_obj.payment_method == 'installment':
             return InstallmentPaymentRecord.objects.get(financial_outcome=financial_obj)
 
-
     def get_serializer_class(self):
         """
         selects the appropriate serializer based on the payment method.
@@ -110,7 +110,6 @@ class PaymentMethodUpdateView(generics.RetrieveUpdateAPIView):
         context = super().get_serializer_context()
         context['payment_method'] = self.get_object()
         return context
-
 
     def perform_update(self, serializer):
         """
@@ -137,7 +136,6 @@ class InstallmentScheduleListView(generics.ListAPIView):
         return InstallmentSchedule.objects.filter(installment_id=installment_obj)
 
 
-
 class InstallmentScheduleUpdateView(generics.RetrieveUpdateAPIView):
     """
     this view is used to update an installment schedule instance.
@@ -154,3 +152,96 @@ class InstallmentScheduleUpdateView(generics.RetrieveUpdateAPIView):
         """
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
+
+class CompleteCashPaymentMethodView(APIView):
+    """
+    this view is used to change the status of chash payment record
+    permission ->  Only authenticated users
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        """
+        this method retrieves cash payment instance and change its status to done.
+        """
+        cash = get_object_or_404(CashPaymentRecord, id=kwargs['pk'])
+        cash.complete_cash_payment()
+        return Response(data={'detail': 'cash payment operation completed successfully'}, status=status.HTTP_200_OK)
+
+
+class CancelCashPaymentMethodView(APIView):
+    """
+    this view is used to change the status of chash payment record.
+    permission ->  Only authenticated users
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        """
+        this method retrieves cash payment instance and change its status to cancel.
+        """
+        cash = get_object_or_404(CashPaymentRecord, id=kwargs['pk'])
+        cash.cancel_cash_payment()
+        return Response(data={'detail': 'cash payment operation canceled'}, status=status.HTTP_200_OK)
+
+
+class CompleteCheckPaymentMethodView(APIView):
+    """
+    this view is used to change the status of check payment record.
+    permission ->  Only authenticated users
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        """
+        this method retrieves the check payment instance and changes its status to done.
+        based on returned string, display a proper message
+        """
+        check = get_object_or_404(CheckPaymentRecord, id=kwargs['pk'])
+
+        if check.status != 'canceled':
+            flag = check.complete_check_payment()
+            if flag == 'True':
+                return Response(data={'detail': 'check payment operation completed successfully'},
+                                status=status.HTTP_200_OK)
+            elif flag == 'False1':
+                return Response(data={'Error': 'You must fill check number and check date first!'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            elif flag == 'False2':
+                return Response(data={'Error': 'The check date is not today'},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(data={'Error': 'this check already canceled!'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+class CompleteInstallmentSchedulePaymentMethodView(APIView):
+    """
+    this view is used to change the status of installment schedule record.
+    permission ->  Only authenticated users
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        """
+        this method retrieves the installment schedule instance and changes its status to paid.
+        based on returned string, display a proper message
+        """
+        installment = get_object_or_404(InstallmentSchedule, id=kwargs['pk'])
+        if installment.installment_status == 'in_progress':
+            flag = installment.complete_installment_schedule()
+            if flag == 'True':
+                return Response(data={'detail': 'install schedule payment operation completed successfully'},
+                                status=status.HTTP_200_OK)
+            elif flag == 'False2':
+                return Response(data={'Error': "The installment payment due date has passed."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            elif flag == 'False1':
+                return Response(data={'Error': 'You must fill installment date field first!'},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(data={'Error': '"The payment status has already been determined."'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
