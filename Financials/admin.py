@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import FinancialOutcomeRecord, CashPaymentRecord, CheckPaymentRecord, InstallmentSchedule, \
-    InstallmentPaymentRecord
+    InstallmentPaymentRecord, FinancialIncomeRecord
 
 
 class FinancialOutcomeRecordAdmin(admin.ModelAdmin):
@@ -77,3 +77,12 @@ class InstallmentPaymentRecordAdmin(admin.ModelAdmin):
 
 
 admin.site.register(InstallmentPaymentRecord, InstallmentPaymentRecordAdmin)
+
+
+class FinancialIncomeRecordAdmin(admin.ModelAdmin):
+    list_display = ('title', 'owner', 'source', 'amount', 'project')
+    search_fields = ('owner', 'source', 'title')
+    list_filter = ('project', 'source')
+    readonly_fields = ('create_date',)
+
+admin.site.register(FinancialIncomeRecord, FinancialIncomeRecordAdmin)

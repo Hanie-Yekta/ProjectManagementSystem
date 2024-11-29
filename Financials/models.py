@@ -219,3 +219,20 @@ class InstallmentSchedule(models.Model):
 
 
 
+class FinancialIncomeRecord(models.Model):
+    INCOME_SOURCE_CHOICES = (
+        ('investment', 'Investment'),
+        ('grant', 'Grant'),
+        ('other', 'Other')
+    )
+
+    title = models.CharField(max_length=256)
+    amount = models.FloatField()
+    source = models.CharField(max_length=50, choices=INCOME_SOURCE_CHOICES)
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='user_finance_income')
+    project = models.ForeignKey('Projects.Project', on_delete=models.CASCADE, related_name='project')
+    create_date = models.DateTimeField(auto_now_add=True)
+    description = models.TextField(blank=True, null=True)
+
+    def str(self):
+        return self.title
