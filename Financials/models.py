@@ -220,6 +220,10 @@ class InstallmentSchedule(models.Model):
 
 
 class FinancialIncomeRecord(models.Model):
+    """
+    financial income model stores user financial income information.
+    user can enter -> title, description, amount, source, related project
+    """
     INCOME_SOURCE_CHOICES = (
         ('investment', 'Investment'),
         ('grant', 'Grant'),
@@ -227,12 +231,12 @@ class FinancialIncomeRecord(models.Model):
     )
 
     title = models.CharField(max_length=256)
-    amount = models.FloatField()
+    description = models.TextField(blank=True, null=True)
+    amount = models.PositiveBigIntegerField()
     source = models.CharField(max_length=50, choices=INCOME_SOURCE_CHOICES)
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='user_finance_income')
     project = models.ForeignKey('Projects.Project', on_delete=models.CASCADE, related_name='project')
-    create_date = models.DateTimeField(auto_now_add=True)
-    description = models.TextField(blank=True, null=True)
+    create_date = models.DateField(auto_now_add=True)
 
     def str(self):
         return self.title
