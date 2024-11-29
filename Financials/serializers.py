@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import now
 
 from .models import FinancialOutcomeRecord, CashPaymentRecord, InstallmentPaymentRecord, CheckPaymentRecord, \
-    InstallmentSchedule
+    InstallmentSchedule, FinancialIncomeRecord
 from Projects.models import Project, Task, SubTask
 from Projects.serializers import ProjectSerializer, TaskSerializer, SubTaskSerializer
 from Accounts.serializers import UserProfileDetailSerializer
@@ -267,5 +267,22 @@ class InstallmentScheduleSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class FinancialIncomeSerializer(serializers.ModelSerializer):
+    """
+    serialize data for financial income model.
+    include validation on amount field.
+    """
+    owner = UserProfileDetailSerializer(read_only=True)
+    project = ProjectSerializer(read_only=True)
 
+    class Meta:
+        model = FinancialIncomeRecord
+        fields = ('id', 'title', 'description', 'amount', 'source', 'owner', 'project')
+
+    def validate(self, attrs):
+        if self.instance:
+            amount = attrs.get('amount')
+            if self.instance.amount and amount and self.instance.amount != amount:
+                raise serializers.ValidationError({'Error': "You cant change financial income's amount"})
+        return attrs
 

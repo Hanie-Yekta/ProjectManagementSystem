@@ -21,4 +21,8 @@ urlpatterns = [
          name='complete_check_payment'),
     path('complete-installment_schedule-payment/<int:pk>/', views.CompleteInstallmentSchedulePaymentMethodView.as_view(),
          name='complete_installment_schedule_payment'),
+    path('create-list-financial-income/<int:project_id>/', views.FinancialIncomeListCreateView.as_view(),
+         name='create_list_financial_income'),
+    path('update-delete-financial-income/<int:pk>/', views.FinancialIncomeUpdateDeleteView.as_view(),
+         name='update_delete_financial_income'),
 ]
