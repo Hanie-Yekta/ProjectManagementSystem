@@ -4,8 +4,10 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 
 from .models import FinancialOutcomeRecord, CashPaymentRecord, CheckPaymentRecord, InstallmentPaymentRecord, \
-    InstallmentSchedule
+    InstallmentSchedule, FinancialIncomeRecord
 from . import serializers
+from Projects.models import Project
+
 
 
 class FinancialOutcomeListCreateView(generics.ListCreateAPIView):
@@ -245,3 +247,52 @@ class CompleteInstallmentSchedulePaymentMethodView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
+class FinancialIncomeListCreateView(generics.ListCreateAPIView):
+    """
+    this view is used to listing and creating financial income records.
+    methods -> GET: for show the list of financial income records
+               POST: for create a new financial income record
+    permission ->  Only authenticated users
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.FinancialIncomeSerializer
+
+    def get_queryset(self):
+        """
+        return user's financial income records.
+        """
+        return FinancialIncomeRecord.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        """
+        pass the user to serializer as creator of financial income record.
+        save financial income record's information
+        """
+        serializer.is_valid(raise_exception=True)
+        project = get_object_or_404(Project, id=self.kwargs['project_id'])
+        serializer.save(owner=self.request.user, project=project)
+
+
+class FinancialIncomeUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    this view is used to update and delete a financial income record.
+    methods -> PUT, PATCH: for update the information of the financial income record
+                DELETE: for delete the financial income record
+    permission ->  Only authenticated users
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.FinancialIncomeSerializer
+    queryset = FinancialIncomeRecord
+
+    def perform_update(self, serializer):
+        """
+        validate and update the financial income record data
+        """
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """
+        delete the financial income record
+        """
+        instance.delete()
