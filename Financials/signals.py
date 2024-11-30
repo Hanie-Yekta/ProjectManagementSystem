@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save
-from .models import InstallmentSchedule, InstallmentPaymentRecord, CheckPaymentRecord, CashPaymentRecord
+from .models import InstallmentSchedule, InstallmentPaymentRecord, CheckPaymentRecord, CashPaymentRecord, \
+    FinancialIncomeRecord
 
 
 def complete_installment_payment_status(sender, instance,**kwargs):
@@ -69,5 +70,19 @@ def complete_financial_outcome_status(sender, instance,**kwargs):
 post_save.connect(receiver=complete_financial_outcome_status, sender=InstallmentPaymentRecord)
 post_save.connect(receiver=complete_financial_outcome_status, sender=CheckPaymentRecord)
 post_save.connect(receiver=complete_financial_outcome_status, sender=CashPaymentRecord)
+
+
+
+def update_project_budget(sender, instance, created, **kwargs):
+    """
+    this method checks if the instance of financial income is created then ->
+        adds the amount of financial income to the project's budget
+    """
+    if created:
+        project = instance.project
+        project.budget += instance.amount
+        project.save()
+
+post_save.connect(receiver=update_project_budget, sender=FinancialIncomeRecord)
 
 

@@ -7,7 +7,7 @@ from Accounts.serializers import UserProfileDetailSerializer
 class ProjectSerializer(serializers.ModelSerializer):
     """
     serialize data for project model.
-    include validation on start date and end date fields.
+    include validation on start date and end date and budget fields.
     """
 
     experts = serializers.ListField(child=serializers.EmailField(), write_only=True, required=False)
@@ -17,17 +17,21 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ('pk', 'title', 'ceo', 'experts', 'experts_details', 'description', 'image', 'category', 'start_date',
-                  'end_date', 'status', 'budget')
-        extra_kwargs = {'description': {'required': False}, }
+                  'end_date', 'status', 'budget', 'initial_budget')
+        extra_kwargs = {'description': {'required': False},
+                        'budget': {'required': True},
+                        'initial_budget': {'read_only': True},}
 
     def validate(self, attrs):
         """
         override this method to validate start date and end date -> start date must before end date
         Once the date value is set, these fields cannot be changed
+        budget cannot be 0.
         """
 
         start_date = attrs.get('start_date')
         end_date = attrs.get('end_date')
+        budget = attrs.get('budget')
 
         if self.instance:
             if start_date and self.instance.start_date and start_date != self.instance.start_date:
@@ -37,6 +41,9 @@ class ProjectSerializer(serializers.ModelSerializer):
 
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({'Error': "start date cannot be greater than end date."})
+
+        if budget == 0:
+            raise serializers.ValidationError({'Error': "budget cannot be 0."})
 
         return attrs
 
@@ -99,7 +106,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 class TaskSerializer(serializers.ModelSerializer):
     """
     serialize data for task model.
-    include validation on start date and end date and manager fields.
+    include validation on start date, end date, manager and budget fields.
     """
     experts = serializers.ListField(child=serializers.EmailField(), write_only=True, required=False)
     experts_details = UserProfileDetailSerializer(source='experts', many=True, read_only=True)
@@ -111,7 +118,8 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = ('pk', 'title', 'project', 'manager', 'manager_details','experts', 'experts_details', 'description',
                   'image', 'category', 'start_date', 'end_date', 'status', 'budget')
-        extra_kwargs = {'description': {'required': False},}
+        extra_kwargs = {'description': {'required': False},
+                        'budget':{'required':True}}
 
 
     def validate(self, attrs):
@@ -122,11 +130,14 @@ class TaskSerializer(serializers.ModelSerializer):
                                                                     task's end date must be before project's end date.
         Once the date value is set, these fields cannot be changed.
         and validate manager field -> can not be changed
+        the total budget of a project's tasks cannot be greater than the project's budget.
+        budget cannot be 0.
         """
 
         start_date = attrs.get('start_date')
         end_date = attrs.get('end_date')
         manager = attrs.get('manager')
+        budget = attrs.get('budget')
 
         if self.instance:
             project = self.instance.project
@@ -159,6 +170,18 @@ class TaskSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError({'Error': "You Cannot set task's start date or end date "
                                                         "because the parent project's dates aren't set."})
+
+        if budget == 0:
+            raise serializers.ValidationError({'Error': "budget cannot be 0."})
+
+        all_tasks = project.task.all()
+        total_tasks_budget = 0
+
+        for task in all_tasks:
+            total_tasks_budget += task.budget
+
+        if total_tasks_budget + budget > project.budget:
+            raise serializers.ValidationError({'Error': "your project doesn't have enough budget to add this task."})
 
         return attrs
 
@@ -231,7 +254,7 @@ class TaskSerializer(serializers.ModelSerializer):
 class SubTaskSerializer(serializers.ModelSerializer):
     """
     serialize data for subtask model.
-    include validation on start date and end date and manager fields.
+    include validation on start date, end date, manager and budget fields.
     """
     experts = serializers.ListField(child=serializers.EmailField(), write_only=True, required=False)
     experts_details = UserProfileDetailSerializer(source='experts', many=True, read_only=True)
@@ -243,7 +266,8 @@ class SubTaskSerializer(serializers.ModelSerializer):
         model = SubTask
         fields = ('pk', 'title', 'task', 'manager', 'manager_details', 'experts', 'experts_details', 'description',
                   'image', 'category', 'start_date', 'end_date', 'status', 'budget')
-        extra_kwargs = {'description': {'required': False}, }
+        extra_kwargs = {'description': {'required': False},
+                        'budget': {'required': True},}
 
 
     def validate(self, attrs):
@@ -254,11 +278,14 @@ class SubTaskSerializer(serializers.ModelSerializer):
                                                                     subtask's end date must be before task's end date.
         Once the date value is set, these fields cannot be changed.
         and validate manager field -> can not be changed
+        the total budget of a task's subtasks cannot be greater than the task's budget.
+        budget cannot be 0.
         """
 
         start_date = attrs.get('start_date')
         end_date = attrs.get('end_date')
         manager = attrs.get('manager')
+        budget = attrs.get('budget')
 
         if self.instance:
             task = self.instance.task
@@ -291,6 +318,19 @@ class SubTaskSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError({'Error': "You Cannot set subtask's start date or end date "
                                                         "because the parent task's dates aren't set."})
+
+
+        if budget == 0:
+            raise serializers.ValidationError({'Error': "budget cannot be 0."})
+
+        all_subtasks = task.sub_task.all()
+        total_subtasks_budget = 0
+
+        for subtask in all_subtasks:
+            total_subtasks_budget += subtask.budget
+
+        if total_subtasks_budget + budget > task.budget:
+            raise serializers.ValidationError({'Error': "your task doesn't have enough budget to add this subtask."})
 
         return attrs
 
