@@ -36,6 +36,7 @@ class Project(models.Model):
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     status = models.CharField(choices=STATUS_OPTIONS, max_length=11, default='not_started')
+    initial_budget = models.PositiveBigIntegerField(null=True, blank=True)
     budget = models.PositiveBigIntegerField(null=True, blank=True)
     is_overdue = models.BooleanField(default=False)
     completion_date = models.DateField(null=True, blank=True)
@@ -47,11 +48,15 @@ class Project(models.Model):
     def clean(self):
         """
         override this method to ensure that start date must before end date.
+        the budget cannot be 0.
         """
 
         super().clean()
         if self.start_date and self.end_date and self.start_date > self.end_date:
             raise ValidationError("start date cannot be greater than end date.")
+
+        if self.budget == 0:
+            raise ValidationError("budget cannot be 0.")
 
     @property
     def change_overdue(self):
@@ -93,9 +98,13 @@ class Project(models.Model):
     def save(self, *args, **kwargs):
         """
         Override this method to update overdue and status value.
+        if an instance is about to be created -> initial_budget = budget
         """
         self.is_overdue = self.change_overdue
         self.status = self.change_status
+
+        if not self.pk:
+            self.initial_budget = self.budget
 
         super().save(*args, **kwargs)
 
@@ -155,6 +164,9 @@ class Task(models.Model):
                                                start date must be before end date.
                                                task's start date must be before project's start date.
                                                task's end date must be before project's end date.
+                                               the total budget of a project's tasks cannot be greater than
+                                                    the project's budget.
+                                               the budget cannot be 0.
         """
 
         super().clean()
@@ -171,6 +183,16 @@ class Task(models.Model):
         else:
             raise ValidationError("You Cannot set task's start date or end date "
                                   "because the parent project's dates aren't set.")
+
+        if self.budget == 0:
+            raise ValidationError("budget cannot be 0.")
+
+        if self.project.budget:
+            all_tasks = self.project.task.exclude(id=self.id)
+            total_tasks_budget = all_tasks.aggregate(total_price=models.Sum('budget'))['total_price'] or 0
+
+            if total_tasks_budget + self.budget > self.project.budget:
+                raise ValidationError("your project doesn't have enough budget to add this task.")
 
 
     @property
@@ -275,6 +297,9 @@ class SubTask(models.Model):
                                                 start date must be before end date.
                                                subtask's start date must be before task's start date.
                                                subtask's end date must be before task's end date.
+                                               the total budget of a task's subtasks cannot be greater than
+                                                    the task's budget.
+                                               the budget cannot be 0.
         """
 
         super().clean()
@@ -291,6 +316,16 @@ class SubTask(models.Model):
         else:
             raise ValidationError("You Cannot set subtask's start date or end date "
                                   "because the parent task's dates aren't set.")
+
+        if self.budget == 0:
+            raise ValidationError("budget cannot be 0.")
+
+        if self.task.budget:
+            all_subtasks = self.task.sub_task.exclude(id=self.id)
+            total_subtasks_budget = all_subtasks.aggregate(total_price=models.Sum('budget'))['total_price'] or 0
+
+            if total_subtasks_budget + self.budget > self.task.budget:
+                raise ValidationError("your task doesn't have enough budget to add this subtask.")
 
 
     @property
