@@ -17,7 +17,8 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ('pk', 'title', 'ceo', 'experts', 'experts_details', 'description', 'image', 'category', 'start_date',
-                  'end_date', 'status', 'budget', 'initial_budget', 'content_id')
+                  'end_date', 'status', 'budget', 'initial_budget', 'content_id', 'generate_budget_report',
+                  'generate_financial_outcome_report', 'generate_completion_date_report')
         extra_kwargs = {'description': {'required': False},
                         'budget': {'required': True},
                         'initial_budget': {'read_only': True}, }
@@ -34,7 +35,6 @@ class ProjectSerializer(serializers.ModelSerializer):
         end_date = attrs.get('end_date')
         budget = attrs.get('budget')
         status = attrs.get('status')
-
 
         if self.instance:
             if start_date and self.instance.start_date and start_date != self.instance.start_date:
@@ -128,7 +128,7 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = ('pk', 'title', 'project', 'manager', 'manager_details', 'experts', 'experts_details', 'description',
                   'image', 'category', 'start_date', 'end_date', 'status', 'budget', 'is_overdue', 'completion_date',
-                  'content_id')
+                  'content_id', 'generate_completion_date_report', 'generate_financial_outcome_report')
         extra_kwargs = {'description': {'required': False},
                         'budget': {'required': True},
                         'is_overdue': {'read_only': True},
@@ -287,11 +287,11 @@ class SubTaskSerializer(serializers.ModelSerializer):
         model = SubTask
         fields = ('pk', 'title', 'task', 'manager', 'manager_details', 'experts', 'experts_details', 'description',
                   'image', 'category', 'start_date', 'end_date', 'status', 'budget', 'is_overdue', 'completion_date',
-                  'content_id')
+                  'content_id', 'generate_completion_date_report', 'generate_financial_outcome_report')
         extra_kwargs = {'description': {'required': False},
                         'budget': {'required': True},
-                        'is_overdue':{'read_only': True},
-                        'completion_date': {'read_only': True},}
+                        'is_overdue': {'read_only': True},
+                        'completion_date': {'read_only': True}, }
 
     def validate(self, attrs):
         """
