@@ -27,8 +27,8 @@ class FinancialOutcomeRecord(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField()
     price = models.PositiveBigIntegerField()
-    create_date = models.DateTimeField(auto_now_add=True)
-    update_date = models.DateTimeField(null=True, blank=True)
+    create_date = models.DateField(auto_now_add=True)
+    update_date = models.DateField(null=True, blank=True)
     payment_date = models.DateField(null=True, blank=True)
     status = models.CharField(choices=STATUS_CHOICES, default='in_progress', max_length=11)
     payment_method = models.CharField(choices=PAYMENT_METHOD_CHOICES, max_length=11)
@@ -39,6 +39,17 @@ class FinancialOutcomeRecord(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        """
+        Override this method to update update date field.
+        """
+        if self.pk:
+            previous_obj = FinancialOutcomeRecord.objects.get(pk=self.pk)
+            if previous_obj.status != self.status:
+                self.update_date = now().date()
+
+        super().save(*args, **kwargs)
 
 
 class CashPaymentRecord(models.Model):
