@@ -103,9 +103,6 @@ class Project(models.Model):
             if self.budget > self.initial_budget:
                 return 'exceeded'
 
-            elif self.budget < self.initial_budget:
-                return 'under'
-
             elif self.budget == self.initial_budget:
                 return 'accurate'
 
@@ -142,9 +139,9 @@ class Project(models.Model):
         generate a report if the status is not 'in_progress'.
         checks if the chosen end date is accurate or not.
         """
-        if self.status != 'in_progress':
+        if self.status == 'completed':
             if self.completion_date < self.end_date:
-               return 'ahead'
+               return 'advance'
             elif self.completion_date > self.end_date:
                 return 'delay'
             elif self.completion_date == self.end_date:
@@ -294,9 +291,9 @@ class Task(models.Model):
         generate a report if the status is not 'in_progress'.
         checks if the chosen end date is accurate or not.
         """
-        if self.status != 'in_progress':
+        if self.status == 'completed':
             if self.completion_date < self.end_date:
-                return 'ahead'
+                return 'advance'
             elif self.completion_date > self.end_date:
                 return 'delay'
             elif self.completion_date == self.end_date:
@@ -465,7 +462,7 @@ class SubTask(models.Model):
         generate a report if the status is not 'in_progress'.
         checks if the chosen end date is accurate or not.
         """
-        if self.status != 'in_progress':
+        if self.status == 'completed':
             if self.completion_date < self.end_date:
                 return 'ahead'
             elif self.completion_date > self.end_date:
