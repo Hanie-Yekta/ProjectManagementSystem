@@ -17,21 +17,24 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ('pk', 'title', 'ceo', 'experts', 'experts_details', 'description', 'image', 'category', 'start_date',
-                  'end_date', 'status', 'budget', 'initial_budget')
+                  'end_date', 'status', 'budget', 'initial_budget', 'content_id')
         extra_kwargs = {'description': {'required': False},
                         'budget': {'required': True},
-                        'initial_budget': {'read_only': True},}
+                        'initial_budget': {'read_only': True}, }
 
     def validate(self, attrs):
         """
         override this method to validate start date and end date -> start date must before end date
         Once the date value is set, these fields cannot be changed
+        status field cannot be changed by put or patch method
         budget cannot be 0.
         """
 
         start_date = attrs.get('start_date')
         end_date = attrs.get('end_date')
         budget = attrs.get('budget')
+        status = attrs.get('status')
+
 
         if self.instance:
             if start_date and self.instance.start_date and start_date != self.instance.start_date:
@@ -42,6 +45,9 @@ class ProjectSerializer(serializers.ModelSerializer):
 
             if budget:
                 raise serializers.ValidationError({'Error': "You can't change budget field!"})
+
+            if status:
+                raise serializers.ValidationError({'Error': "You can't change status field!"})
         else:
             if budget == 0:
                 raise serializers.ValidationError({'Error': "budget cannot be 0."})
@@ -120,11 +126,13 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ('pk', 'title', 'project', 'manager', 'manager_details','experts', 'experts_details', 'description',
-                  'image', 'category', 'start_date', 'end_date', 'status', 'budget')
+        fields = ('pk', 'title', 'project', 'manager', 'manager_details', 'experts', 'experts_details', 'description',
+                  'image', 'category', 'start_date', 'end_date', 'status', 'budget', 'is_overdue', 'completion_date',
+                  'content_id')
         extra_kwargs = {'description': {'required': False},
-                        'budget':{'required':True}}
-
+                        'budget': {'required': True},
+                        'is_overdue': {'read_only': True},
+                        'completion_date': {'read_only': True}, }
 
     def validate(self, attrs):
         """
@@ -134,6 +142,7 @@ class TaskSerializer(serializers.ModelSerializer):
                                                                     task's end date must be before project's end date.
         Once the date value is set, these fields cannot be changed.
         and validate manager field -> can not be changed
+        status field cannot be changed by put or patch method
         the total budget of a project's tasks cannot be greater than the project's budget.
         budget cannot be 0.
         """
@@ -142,6 +151,7 @@ class TaskSerializer(serializers.ModelSerializer):
         end_date = attrs.get('end_date')
         manager = attrs.get('manager')
         budget = attrs.get('budget')
+        status = attrs.get('status')
 
         if self.instance:
             project = self.instance.project
@@ -162,6 +172,9 @@ class TaskSerializer(serializers.ModelSerializer):
             if budget:
                 raise serializers.ValidationError({'Error': "You can't change budget field!"})
 
+            if status:
+                raise serializers.ValidationError({'Error': "You can't change status field!"})
+
         else:
             project = self.context['project']
 
@@ -178,15 +191,14 @@ class TaskSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'Error': "your project doesn't have enough budget to add this task."})
 
-
         if project.start_date and project.end_date:
             if start_date and end_date:
                 if start_date > end_date:
                     raise serializers.ValidationError({'Error': "start date cannot be greater than end date."})
 
                 if start_date < project.start_date:
-
-                    raise serializers.ValidationError({'Error': f"Task's start date must be after {project.start_date}"})
+                    raise serializers.ValidationError(
+                        {'Error': f"Task's start date must be after {project.start_date}"})
 
                 if end_date > project.end_date:
                     raise serializers.ValidationError({'Error': f"Task's end date must be before {project.end_date}"})
@@ -195,9 +207,7 @@ class TaskSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'Error': "You Cannot set task's start date or end date "
                                                         "because the parent project's dates aren't set."})
 
-
         return attrs
-
 
     def create(self, validated_data):
         """
@@ -210,7 +220,6 @@ class TaskSerializer(serializers.ModelSerializer):
         experts_email = validated_data.pop('experts', [])
         manager_email = validated_data.pop('manager')
         exist_experts = []
-
 
         if experts_email:
             for expert in experts_email:
@@ -231,7 +240,6 @@ class TaskSerializer(serializers.ModelSerializer):
             return task
         else:
             raise serializers.ValidationError({'Error': f'Manager with email {manager_email} not found.'})
-
 
     def update(self, instance, validated_data):
         """
@@ -264,7 +272,6 @@ class TaskSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-
 class SubTaskSerializer(serializers.ModelSerializer):
     """
     serialize data for subtask model.
@@ -279,10 +286,12 @@ class SubTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubTask
         fields = ('pk', 'title', 'task', 'manager', 'manager_details', 'experts', 'experts_details', 'description',
-                  'image', 'category', 'start_date', 'end_date', 'status', 'budget')
+                  'image', 'category', 'start_date', 'end_date', 'status', 'budget', 'is_overdue', 'completion_date',
+                  'content_id')
         extra_kwargs = {'description': {'required': False},
-                        'budget': {'required': True},}
-
+                        'budget': {'required': True},
+                        'is_overdue':{'read_only': True},
+                        'completion_date': {'read_only': True},}
 
     def validate(self, attrs):
         """
@@ -292,6 +301,7 @@ class SubTaskSerializer(serializers.ModelSerializer):
                                                                     subtask's end date must be before task's end date.
         Once the date value is set, these fields cannot be changed.
         and validate manager field -> can not be changed
+        status field cannot be changed by put or patch method
         the total budget of a task's subtasks cannot be greater than the task's budget.
         budget cannot be 0.
         """
@@ -300,6 +310,7 @@ class SubTaskSerializer(serializers.ModelSerializer):
         end_date = attrs.get('end_date')
         manager = attrs.get('manager')
         budget = attrs.get('budget')
+        status = attrs.get('status')
 
         if self.instance:
             task = self.instance.task
@@ -311,14 +322,17 @@ class SubTaskSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'Error': "You can't change end date field!"})
 
             elif start_date and not task.start_date or end_date and not task.end_date:
-                raise serializers.ValidationError({'Error':"You Cannot set subtask's start date or end date "
-                                                           "because the parent task's dates aren't set."})
+                raise serializers.ValidationError({'Error': "You Cannot set subtask's start date or end date "
+                                                            "because the parent task's dates aren't set."})
 
             if manager:
                 raise serializers.ValidationError({'Error': "You can't change manager field!"})
 
             if budget:
                 raise serializers.ValidationError({'Error': "You can't change budget field!"})
+
+            if status:
+                raise serializers.ValidationError({'Error': "You can't change status field!"})
 
         else:
             task = self.context['task']
@@ -336,7 +350,6 @@ class SubTaskSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'Error': "your task doesn't have enough budget to add this subtask."})
 
-
         if task.start_date and task.end_date:
             if start_date and end_date:
                 if start_date > end_date:
@@ -352,9 +365,7 @@ class SubTaskSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'Error': "You Cannot set subtask's start date or end date "
                                                         "because the parent task's dates aren't set."})
 
-
         return attrs
-
 
     def create(self, validated_data):
         """
@@ -388,7 +399,6 @@ class SubTaskSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError({'Error': f'Manager with email {manager_email} not found.'})
 
-
     def update(self, instance, validated_data):
         """
         override this method to handle update subtask operation
@@ -401,7 +411,6 @@ class SubTaskSerializer(serializers.ModelSerializer):
         exist_experts = []
         for p_expert in instance.experts.all():
             exist_experts.append(p_expert.email)
-
 
         new_experts = []
         if update_experts:
@@ -419,5 +428,3 @@ class SubTaskSerializer(serializers.ModelSerializer):
             instance.experts.add(*new_experts)
 
         return super().update(instance, validated_data)
-
-
