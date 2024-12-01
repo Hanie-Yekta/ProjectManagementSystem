@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from .models import FinancialOutcomeRecord, CashPaymentRecord, CheckPaymentRecord, InstallmentPaymentRecord, \
     InstallmentSchedule, FinancialIncomeRecord
 from . import serializers
+from .permissions import (IsOwnerFinancialOutcome, CanUpdateDeleteFinancial, CanUpdateDeletePaymentMethod, \
+    CanSeeInstallmentSchedule, CanUpdateInstallmentSchedule, CanUpdateStatusPaymentMethod, IsOwnerFinancialIncome,
+                          CanUpdateDeleteFinancialIncome)
 from Projects.models import Project
-
 
 
 class FinancialOutcomeListCreateView(generics.ListCreateAPIView):
@@ -15,9 +17,9 @@ class FinancialOutcomeListCreateView(generics.ListCreateAPIView):
     this view is used to listing and creating financial outcome records.
     methods -> GET: for show the list of financial outcome records
                POST: for create a new financial outcome record
-    permission ->  Only authenticated users
+    permission -> authenticated users, the owner(project CEO or task manager or subtask manager)
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsOwnerFinancialOutcome)
     serializer_class = serializers.FinancialOutcomeSerializer
 
     def get_queryset(self):
@@ -51,9 +53,9 @@ class FinancialOutcomeUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     this view is used to update and delete a financial outcome record.
     methods -> PUT, PATCH: for update the information of the financial outcome record
                 DELETE: for delete the financial outcome record
-    permission ->  Only authenticated users
+    permission -> authenticated users, the owner(project CEO or task manager or subtask manager)
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteFinancial)
     serializer_class = serializers.FinancialOutcomeSerializer
     queryset = FinancialOutcomeRecord
 
@@ -75,9 +77,9 @@ class PaymentMethodUpdateView(generics.RetrieveUpdateAPIView):
     """
     this view is used to update a payment method instance of financial outcome record.
     methods -> PUT, PATCH: for update the information of the payment method
-    permission ->  Only authenticated users
+    permission -> authenticated users, the financial outcome owner (project CEO or task manager or subtask manager)
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateDeletePaymentMethod)
 
     def get_object(self):
         """
@@ -125,9 +127,9 @@ class InstallmentScheduleListView(generics.ListAPIView):
     """
     this view is used to listing installment schedules for a specific installment payment.
     methods -> GET: for show the list of installment schedules
-    permission ->  Only authenticated users
+    permission -> authenticated users, the financial outcome owner (project CEO or task manager or subtask manager)
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanSeeInstallmentSchedule)
     serializer_class = serializers.InstallmentScheduleSerializer
 
     def get_queryset(self):
@@ -142,9 +144,9 @@ class InstallmentScheduleUpdateView(generics.RetrieveUpdateAPIView):
     """
     this view is used to update an installment schedule instance.
     methods -> PUT, PATCH: for update the information of the installment schedule record
-    permission ->  Only authenticated users
+    permission -> authenticated users, the financial outcome owner (project CEO or task manager or subtask manager)
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateInstallmentSchedule)
     serializer_class = serializers.InstallmentScheduleSerializer
     queryset = InstallmentSchedule
 
@@ -159,9 +161,9 @@ class InstallmentScheduleUpdateView(generics.RetrieveUpdateAPIView):
 class CompleteCashPaymentMethodView(APIView):
     """
     this view is used to change the status of chash payment record
-    permission ->  Only authenticated users
+    permission -> authenticated users, the financial outcome owner (project CEO or task manager or subtask manager)
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateStatusPaymentMethod)
 
     def post(self, request, *args, **kwargs):
         """
@@ -175,9 +177,9 @@ class CompleteCashPaymentMethodView(APIView):
 class CancelCashPaymentMethodView(APIView):
     """
     this view is used to change the status of chash payment record.
-    permission ->  Only authenticated users
+    permission -> authenticated users, the financial outcome owner (project CEO or task manager or subtask manager)
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateStatusPaymentMethod)
 
     def post(self, request, *args, **kwargs):
         """
@@ -191,9 +193,9 @@ class CancelCashPaymentMethodView(APIView):
 class CompleteCheckPaymentMethodView(APIView):
     """
     this view is used to change the status of check payment record.
-    permission ->  Only authenticated users
+    permission -> authenticated users, the financial outcome owner (project CEO or task manager or subtask manager)
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateStatusPaymentMethod)
 
     def post(self, request, *args, **kwargs):
         """
@@ -221,9 +223,9 @@ class CompleteCheckPaymentMethodView(APIView):
 class CompleteInstallmentSchedulePaymentMethodView(APIView):
     """
     this view is used to change the status of installment schedule record.
-    permission ->  Only authenticated users
+    permission -> authenticated users, the financial outcome owner (project CEO or task manager or subtask manager)
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateInstallmentSchedule)
 
     def post(self, request, *args, **kwargs):
         """
@@ -252,9 +254,9 @@ class FinancialIncomeListCreateView(generics.ListCreateAPIView):
     this view is used to listing and creating financial income records.
     methods -> GET: for show the list of financial income records
                POST: for create a new financial income record
-    permission ->  Only authenticated users
+    permission -> authenticated users, the project CEO
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsOwnerFinancialIncome)
     serializer_class = serializers.FinancialIncomeSerializer
 
     def get_queryset(self):
@@ -278,9 +280,9 @@ class FinancialIncomeUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     this view is used to update and delete a financial income record.
     methods -> PUT, PATCH: for update the information of the financial income record
                 DELETE: for delete the financial income record
-    permission ->  Only authenticated users
+    permission -> authenticated users, the project CEO
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteFinancialIncome)
     serializer_class = serializers.FinancialIncomeSerializer
     queryset = FinancialIncomeRecord
 
