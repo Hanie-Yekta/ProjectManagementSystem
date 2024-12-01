@@ -41,7 +41,7 @@ class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     this view is used to update and delete a project
     methods -> PUT, PATCH: for update the information of the project
                DELETE: for delete the project
-    permission ->  Only authenticated users
+    permission -> authenticated users, ceo of project
     """
 
     permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteProject)
@@ -68,7 +68,7 @@ class TaskListCreateView(generics.ListCreateAPIView):
     this view is used to listing and creating tasks.
     methods -> GET: for show the list of tasks of specific project
                POST: for create a new task for specific project
-    permission ->  Only authenticated users
+    permission -> authenticated users, ceo of project
     """
     permission_classes = (permissions.IsAuthenticated, CanCreateSeeTask)
     serializer_class = serializers.TaskSerializer
@@ -104,7 +104,7 @@ class TaskUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     this view is used to update and delete a task
     methods -> PUT, PATCH: for update the information of the task
                DELETE: for delete the task
-    permission ->  Only authenticated users
+    permission -> authenticated users, project's ceo, task's manager
     """
 
     permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteTask)
@@ -131,7 +131,7 @@ class SubTaskListCreateView(generics.ListCreateAPIView):
     this view is used to listing and creating subtasks.
     methods -> GET: for show the list of subtasks of specific task
                POST: for create a new subtask for specific task
-    permission ->  Only authenticated users
+    permission -> authenticated users, project's ceo, task's manager
     """
     permission_classes = (permissions.IsAuthenticated, CanCreateSeeSubTask)
     serializer_class = serializers.SubTaskSerializer
@@ -167,7 +167,7 @@ class SubTaskUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     this view is used to update and delete a subtask
     methods -> PUT, PATCH: for update the information of the subtask
                DELETE: for delete the subtask
-    permission ->  Only authenticated users
+    permission -> authenticated users, project's ceo, task's manager, subtask's manager
     """
 
     permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteSubTask)
@@ -191,6 +191,7 @@ class SubTaskUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 class CompleteProjectStatusView(APIView):
     """
     this view is used to change the status of projects
+    permission -> authenticated users, project's ceo
     """
     permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteProject)
 
@@ -217,6 +218,7 @@ class CompleteProjectStatusView(APIView):
 class CompleteTaskStatusView(APIView):
     """
     this view is used to change the status of tasks
+    permission -> authenticated users, project's ceo, task's manager
     """
     permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteTask)
 
@@ -244,6 +246,7 @@ class CompleteTaskStatusView(APIView):
 class CompleteSubTaskStatusView(APIView):
     """
     this view is used to change the status of subtasks.
+    permission -> authenticated users, project's ceo, task's manager, subtask's manager
     """
     permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteSubTask)
 
