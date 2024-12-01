@@ -4,6 +4,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from .models import Project, Task, SubTask
 from . import serializers
+from .permissions import CanUpdateDeleteProject, CanCreateSeeTask, CanUpdateDeleteTask, CanCreateSeeSubTask, \
+    CanUpdateDeleteSubTask
+
 
 class ProjectListCreateView(generics.ListCreateAPIView):
     """
@@ -41,7 +44,7 @@ class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission ->  Only authenticated users
     """
 
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteProject)
     serializer_class = serializers.ProjectSerializer
     queryset = Project
 
@@ -67,7 +70,7 @@ class TaskListCreateView(generics.ListCreateAPIView):
                POST: for create a new task for specific project
     permission ->  Only authenticated users
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanCreateSeeTask)
     serializer_class = serializers.TaskSerializer
     lookup_field = 'project_id'
 
@@ -104,7 +107,7 @@ class TaskUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission ->  Only authenticated users
     """
 
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteTask)
     serializer_class = serializers.TaskSerializer
     queryset = Task
 
@@ -130,7 +133,7 @@ class SubTaskListCreateView(generics.ListCreateAPIView):
                POST: for create a new subtask for specific task
     permission ->  Only authenticated users
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanCreateSeeSubTask)
     serializer_class = serializers.SubTaskSerializer
     lookup_field = 'task_id'
 
@@ -167,7 +170,7 @@ class SubTaskUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission ->  Only authenticated users
     """
 
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteSubTask)
     serializer_class = serializers.SubTaskSerializer
     queryset = SubTask
 
@@ -189,7 +192,7 @@ class CompleteProjectStatusView(APIView):
     """
     this view is used to change the status of projects
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteProject)
 
     def post(self, request, *args, **kwargs):
         """
@@ -215,7 +218,7 @@ class CompleteTaskStatusView(APIView):
     """
     this view is used to change the status of tasks
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteTask)
 
     def post(self, request, *args, **kwargs):
         """
@@ -242,7 +245,7 @@ class CompleteSubTaskStatusView(APIView):
     """
     this view is used to change the status of subtasks.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, CanUpdateDeleteSubTask)
 
     def post(self, request, *args, **kwargs):
         """
