@@ -3,8 +3,8 @@ from Accounts.models import CustomUser
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
 from django.contrib.contenttypes.fields import GenericRelation
-from Financials.models import FinancialOutcomeRecord
 from django.contrib.contenttypes.models import ContentType
+from Financials.models import FinancialOutcomeRecord
 
 
 class Project(models.Model):
@@ -84,7 +84,6 @@ class Project(models.Model):
                 return 'in_progress'
         return self.status
 
-
     def complete_project(self):
         """
         complete project with change two fields -> status=completed
@@ -93,6 +92,63 @@ class Project(models.Model):
         self.status = 'completed'
         self.completion_date = now().date()
         self.save()
+
+    @property
+    def generate_budget_report(self):
+        """
+        generate a report if the status is not 'in_progress'.
+        checks if the initial budget was accurate or not (or checks if we need financial income or not).
+        """
+        if self.status != 'in_progress':
+            if self.budget > self.initial_budget:
+                return 'exceeded'
+
+            elif self.budget < self.initial_budget:
+                return 'under'
+
+            elif self.budget == self.initial_budget:
+                return 'accurate'
+
+    @property
+    def generate_financial_outcome_report(self):
+        """
+        generate a report if the status is not 'in_progress'.
+        gets all the financial outcome record for the project and adds their price together
+        checks if the spent amount is different from the budget or not.
+        """
+        if self.status != 'in_progress':
+            financial_objs = FinancialOutcomeRecord.objects.filter(content_type=ContentType.objects.get_for_model(self),
+                                                                   object_id=self.pk,
+                                                                   status='paid')
+            total_price = 0
+            if financial_objs:
+
+                for financial_obj in financial_objs:
+                    total_price += financial_obj.price
+
+            if self.budget < total_price:
+                return 'exceeded'
+
+            elif self.budget > total_price:
+                return 'under'
+
+            elif self.budget == total_price:
+                return 'accurate'
+
+
+    @property
+    def generate_completion_date_report(self):
+        """
+        generate a report if the status is not 'in_progress'.
+        checks if the chosen end date is accurate or not.
+        """
+        if self.status != 'in_progress':
+            if self.completion_date < self.end_date:
+               return 'ahead'
+            elif self.completion_date > self.end_date:
+                return 'delay'
+            elif self.completion_date == self.end_date:
+                return 'on schedule'
 
 
     def save(self, *args, **kwargs):
@@ -232,6 +288,44 @@ class Task(models.Model):
         self.completion_date = now().date()
         self.save()
 
+    @property
+    def generate_completion_date_report(self):
+        """
+        generate a report if the status is not 'in_progress'.
+        checks if the chosen end date is accurate or not.
+        """
+        if self.status != 'in_progress':
+            if self.completion_date < self.end_date:
+                return 'ahead'
+            elif self.completion_date > self.end_date:
+                return 'delay'
+            elif self.completion_date == self.end_date:
+                return 'on schedule'
+
+    @property
+    def generate_financial_outcome_report(self):
+        """
+        generate a report if the status is not 'in_progress'.
+        gets all the financial outcome record for the task and adds their price together
+        checks if the spent amount is different from the budget or not.
+        """
+        if self.status != 'in_progress':
+            financial_objs = FinancialOutcomeRecord.objects.filter(content_type=ContentType.objects.get_for_model(self),
+                                                                   object_id=self.pk,
+                                                                   status='paid')
+            total_price = 0
+            if financial_objs:
+
+                for financial_obj in financial_objs:
+                    total_price += financial_obj.price
+
+            if self.budget < total_price:
+                return 'exceeded'
+            elif self.budget > total_price:
+                return 'under'
+            elif self.budget == total_price:
+                return 'accurate'
+
 
     def save(self, *args, **kwargs):
         """
@@ -364,6 +458,45 @@ class SubTask(models.Model):
         self.status = 'completed'
         self.completion_date = now().date()
         self.save()
+
+    @property
+    def generate_completion_date_report(self):
+        """
+        generate a report if the status is not 'in_progress'.
+        checks if the chosen end date is accurate or not.
+        """
+        if self.status != 'in_progress':
+            if self.completion_date < self.end_date:
+                return 'ahead'
+            elif self.completion_date > self.end_date:
+                return 'delay'
+            elif self.completion_date == self.end_date:
+                return 'on schedule'
+
+
+    @property
+    def generate_financial_outcome_report(self):
+        """
+        generate a report if the status is not 'in_progress'.
+        gets all the financial outcome record for the subtask and adds their price together
+        checks if the spent amount is different from the budget or not.
+        """
+        if self.status != 'in_progress':
+            financial_objs = FinancialOutcomeRecord.objects.filter(content_type=ContentType.objects.get_for_model(self),
+                                                                   object_id=self.pk,
+                                                                   status='paid')
+            total_price = 0
+            if financial_objs:
+
+                for financial_obj in financial_objs:
+                    total_price += financial_obj.price
+
+            if self.budget < total_price:
+                return 'exceeded'
+            elif self.budget > total_price:
+                return 'under'
+            elif self.budget == total_price:
+                return 'accurate'
 
 
     def save(self, *args, **kwargs):
