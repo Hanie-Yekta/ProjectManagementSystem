@@ -93,7 +93,11 @@ All notable changes to this project are documented here.
 ## [1.12.0] - 1403-09-12
 ### Added
 - Added reports for the `Projects` app models. ([#28](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/28))
+- Integrated Swagger for API documentation. ([#31](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/31))
+- Introduced PostgreSQL as the database. ([#32](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/32))
 
 ### Fixed
 - Fixed issues with report functions. ([#29](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/29))
 
+### Security
+- Organized parameters in the `settings.py` file. ([#33](https://github.com/Hanie-Yekta/BootCamp_FinalProject/pull/33))
